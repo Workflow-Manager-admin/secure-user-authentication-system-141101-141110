@@ -1,27 +1,62 @@
-import React from 'react'
-import logo from './logo.svg'
-import './App.css'
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from './contexts/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
+import LoadingScreen from './components/LoadingScreen';
 
-// PUBLIC_INTERFACE
-function App () {
+// Pages
+import SignIn from './pages/SignIn';
+import SignUp from './pages/SignUp';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+import Dashboard from './pages/Dashboard';
+
+/**
+ * PUBLIC_INTERFACE
+ * Root application component. Sets up client-side routing, route guards and
+ * redirect logic based on Supabase authentication status.
+ */
+export default function App() {
+  const { user, loading } = useAuth();
+
+  // While AuthContext initialises, keep UI minimal
+  if (loading) {
+    return <LoadingScreen />;
+  }
+
   return (
-    <div className="App flex items-center justify-center min-h-screen bg-black text-white">
-      <header className="App-header flex flex-col items-center gap-4">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link underline decoration-accent"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  )
-}
+    <Router>
+      <Routes>
+        {/* home → redirect to dashboard (if logged in) or login */}
+        <Route
+          path="/"
+          element={<Navigate to={user ? '/dashboard' : '/login'} replace />}
+        />
 
-export default App
+        {/* Auth pages – block when already authenticated */}
+        <Route
+          path="/login"
+          element={user ? <Navigate to="/dashboard" replace /> : <SignIn />}
+        />
+        <Route
+          path="/signup"
+          element={user ? <Navigate to="/dashboard" replace /> : <SignUp />}
+        />
+        <Route
+          path="/forgot-password"
+          element={user ? <Navigate to="/dashboard" replace /> : <ForgotPassword />}
+        />
+        {/* Reset password is triggered via Supabase email link and does NOT guard */}
+        <Route path="/reset-password" element={<ResetPassword />} />
+
+        {/* Protected dashboard */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+        </Route>
+
+        {/* Catch-all → home (from where we redirect) */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Router>
+  );
+}
