@@ -1,9 +1,11 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useProfile } from '../hooks/useProfile';
 
 export default function Dashboard() {
   const { user, signOut } = useAuth();
+  const { profile, loading: profileLoading } = useProfile();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -38,7 +40,7 @@ export default function Dashboard() {
           {/* Welcome Section */}
           <div className="space-y-4">
             <h2 className="text-4xl font-bold text-white">
-              Welcome back!
+              Welcome back{profile?.first_name ? `, ${profile.first_name}` : ''}!
             </h2>
             <p className="text-xl text-zinc-400">
               Signed in as <span className="text-accent font-medium">{user?.email}</span>
@@ -75,18 +77,58 @@ export default function Dashboard() {
                   </p>
                 </div>
 
-                <div className="pt-4 border-t border-zinc-800">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-                    <div className="flex items-center space-x-2 text-zinc-300">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span>Account verified</span>
-                    </div>
-                    <div className="flex items-center space-x-2 text-zinc-300">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span>Secure connection</span>
+                {/* Profile Information */}
+                {profileLoading ? (
+                  <div className="pt-4 border-t border-zinc-800">
+                    <div className="animate-pulse flex space-x-4">
+                      <div className="rounded-full bg-zinc-700 h-3 w-3"></div>
+                      <div className="flex-1 space-y-2">
+                        <div className="h-3 bg-zinc-700 rounded w-3/4"></div>
+                        <div className="h-3 bg-zinc-700 rounded w-1/2"></div>
+                      </div>
                     </div>
                   </div>
-                </div>
+                ) : profile ? (
+                  <div className="pt-4 border-t border-zinc-800 space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                      <div className="flex items-center space-x-2 text-zinc-300">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span>Account verified</span>
+                      </div>
+                      <div className="flex items-center space-x-2 text-zinc-300">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span>Secure connection</span>
+                      </div>
+                    </div>
+                    <div className="text-left space-y-2 pt-2">
+                      <h4 className="text-sm font-semibold text-zinc-200">Profile Information</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-zinc-400">
+                        <div>
+                          <span className="font-medium">Name:</span> {profile.first_name} {profile.last_name}
+                        </div>
+                        <div>
+                          <span className="font-medium">Profession:</span> {profile.profession || 'Not specified'}
+                        </div>
+                        <div className="sm:col-span-2">
+                          <span className="font-medium">Member since:</span> {new Date(profile.created_at).toLocaleDateString()}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="pt-4 border-t border-zinc-800">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+                      <div className="flex items-center space-x-2 text-zinc-300">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span>Account verified</span>
+                      </div>
+                      <div className="flex items-center space-x-2 text-zinc-300">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span>Secure connection</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
