@@ -34,14 +34,20 @@ export const AuthProvider = ({ children }) => {
 
   /**
    * PUBLIC_INTERFACE
-   * Sign up user with email and password.
+   * Sign up user with email, password, and user metadata.
    */
-  const signUp = useCallback(async ({ email, password }) => {
+  const signUp = useCallback(async ({ email, password, firstName, lastName, profession }) => {
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}`
+        emailRedirectTo: `${process.env.REACT_APP_SITE_URL || window.location.origin}`,
+        data: {
+          first_name: firstName,
+          last_name: lastName,
+          profession: profession,
+          full_name: `${firstName} ${lastName}`
+        }
       }
     });
 
