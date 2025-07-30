@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { supabase } from '../supabaseClient';
 import { toast } from 'react-hot-toast';
+import { createUserProfile, getUserProfile } from '../utils/profileUtils';
 
 /**
  * Context holding authentication state and actions.
@@ -25,8 +26,39 @@ export const AuthProvider = ({ children }) => {
 
     initSession();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       setSession(newSession);
+      
+      // If user just signed in and has metadata but no profile, create one
+      if (event === 'SIGNED_IN' && newSession?.user) {
+        const user = newSession.user;
+        
+        // Check if profile exists
+        try {
+          const { data: existingProfile, error: profileError } = await getUserProfile();
+          
+          // If no profile exists but user has metadata, create profile
+          if (!existingProfile && !profileError && user.user_metadata) {
+            const metadata = user.user_metadata;
+            
+            if (metadata.first_name && metadata.last_name) {
+              try {
+                await createUserProfile({
+                  id: user.id,
+                  email: user.email,
+                  first_name: metadata.first_name,
+                  last_name: metadata.last_name,
+                  profession: metadata.profession || ''
+                });
+              } catch (createError) {
+                console.warn('Failed to create profile on sign in:', createError);
+              }
+            }
+          }
+        } catch (error) {
+          console.warn('Error checking/creating profile on sign in:', error);
+        }
+      }
     });
 
     return () => authListener.subscription.unsubscribe();
@@ -37,7 +69,7 @@ export const AuthProvider = ({ children }) => {
    * Sign up user with email, password, and user metadata.
    */
   const signUp = useCallback(async ({ email, password, firstName, lastName, profession }) => {
-    const { error } = await supabase.auth.signUp({
+    const { data: signUpData, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -54,6 +86,28 @@ export const AuthProvider = ({ children }) => {
     if (error) {
       toast.error(`Sign up failed: ${error.message}`);
       throw error;
+    }
+
+    // If user was created successfully, also create their profile
+    if (signUpData.user) {
+      try {
+        const { error: profileError } = await createUserProfile({
+          id: signUpData.user.id,
+          email: email,
+          first_name: firstName,
+          last_name: lastName,
+          profession: profession
+        });
+
+        if (profileError) {
+          // Log the error but don't fail the signup process
+          // The trigger should handle this, but this is a fallback
+          console.warn('Profile creation failed, relying on database trigger:', profileError);
+        }
+      } catch (profileError) {
+        // Log the error but don't fail the signup process
+        console.warn('Profile creation failed, relying on database trigger:', profileError);
+      }
     }
 
     toast.success('Check your email for the confirmation link!');

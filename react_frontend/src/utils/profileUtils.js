@@ -75,6 +75,36 @@ export const getProfileById = async (userId) => {
 };
 
 /**
+ * Create a new user profile in the profiles table
+ * @param {Object} profileData - Profile data
+ * @param {string} profileData.id - User ID from Supabase Auth
+ * @param {string} profileData.email - User email
+ * @param {string} profileData.first_name - User's first name
+ * @param {string} profileData.last_name - User's last name
+ * @param {string} profileData.profession - User's profession
+ * @returns {Promise<{data: Object|null, error: Error|null}>}
+ */
+export const createUserProfile = async (profileData) => {
+  try {
+    const { data, error } = await supabase
+      .from('profiles')
+      .insert([{
+        id: profileData.id,
+        email: profileData.email,
+        first_name: profileData.first_name,
+        last_name: profileData.last_name,
+        profession: profileData.profession
+      }])
+      .select()
+      .single();
+
+    return { data, error };
+  } catch (error) {
+    return { data: null, error };
+  }
+};
+
+/**
  * Delete the current user's profile
  * @returns {Promise<{data: Object|null, error: Error|null}>}
  */
