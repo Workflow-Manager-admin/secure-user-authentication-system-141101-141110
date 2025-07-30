@@ -17,50 +17,85 @@ export default function SignUp() {
     try {
       await signUp(form);
       navigate('/login', { replace: true });
+    } catch (error) {
+      // Error is already handled by AuthContext with toast
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-black text-white">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-zinc-900 p-8 rounded shadow-md w-full max-w-xs flex flex-col gap-4"
-      >
-        <h1 className="text-2xl font-bold text-center">Sign Up</h1>
-        <input
-          className="p-2 rounded bg-zinc-800"
-          required
-          type="email"
-          name="email"
-          placeholder="Email"
-          value={form.email}
-          onChange={handleChange}
-        />
-        <input
-          className="p-2 rounded bg-zinc-800"
-          required
-          type="password"
-          name="password"
-          placeholder="Password"
-          value={form.password}
-          onChange={handleChange}
-        />
-        <button
-          className="btn bg-accent py-2 rounded disabled:opacity-50"
-          disabled={submitting}
-          type="submit"
+    <div className="flex items-center justify-center min-h-screen bg-black text-white p-4">
+      <div className="w-full max-w-md">
+        <form
+          onSubmit={handleSubmit}
+          className="bg-zinc-900/80 backdrop-blur-sm p-8 rounded-xl shadow-2xl border border-zinc-800 space-y-6"
         >
-          {submitting ? 'Signing up…' : 'Create account'}
-        </button>
-        <p className="text-sm text-center mt-2">
-          Already have an account?{' '}
-          <Link to="/login" className="underline">
-            Sign in
-          </Link>
-        </p>
-      </form>
+          <div className="text-center space-y-2">
+            <h1 className="text-3xl font-bold text-white">Create Account</h1>
+            <p className="text-zinc-400">Join us today</p>
+          </div>
+          
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-zinc-300 mb-2">
+                Email Address
+              </label>
+              <input
+                id="email"
+                className="w-full px-4 py-3 rounded-lg bg-zinc-800/50 border border-zinc-700 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all duration-200"
+                required
+                type="email"
+                name="email"
+                placeholder="Enter your email"
+                value={form.email}
+                onChange={handleChange}
+              />
+            </div>
+            
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-zinc-300 mb-2">
+                Password
+              </label>
+              <input
+                id="password"
+                className="w-full px-4 py-3 rounded-lg bg-zinc-800/50 border border-zinc-700 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all duration-200"
+                required
+                type="password"
+                name="password"
+                placeholder="Create a password"
+                value={form.password}
+                onChange={handleChange}
+              />
+            </div>
+          </div>
+
+          <button
+            className="w-full bg-accent hover:bg-accent/90 text-white font-medium py-3 px-4 rounded-lg transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+            disabled={submitting}
+            type="submit"
+          >
+            {submitting ? (
+              <div className="flex items-center justify-center space-x-2">
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                <span>Creating account...</span>
+              </div>
+            ) : (
+              'Create Account'
+            )}
+          </button>
+
+          <p className="text-sm text-center text-zinc-400">
+            Already have an account?{' '}
+            <Link 
+              to="/login" 
+              className="text-accent hover:text-accent/80 transition-colors duration-200"
+            >
+              Sign in
+            </Link>
+          </p>
+        </form>
+      </div>
     </div>
   );
 }

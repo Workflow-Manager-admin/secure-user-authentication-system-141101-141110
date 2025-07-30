@@ -46,7 +46,7 @@ export const AuthProvider = ({ children }) => {
     });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(`Sign up failed: ${error.message}`);
       throw error;
     }
 
@@ -60,10 +60,10 @@ export const AuthProvider = ({ children }) => {
   const signIn = useCallback(async ({ email, password }) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      toast.error(error.message);
+      toast.error(`Sign in failed: ${error.message}`);
       throw error;
     }
-    toast.success('Logged in successfully!');
+    toast.success('Welcome back! Successfully logged in.');
   }, []);
 
   /**
@@ -73,9 +73,10 @@ export const AuthProvider = ({ children }) => {
   const signOut = useCallback(async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
-      toast.error(error.message);
+      toast.error(`Sign out failed: ${error.message}`);
       throw error;
     }
+    toast.success('Successfully logged out!');
   }, []);
 
   /**
@@ -87,10 +88,10 @@ export const AuthProvider = ({ children }) => {
       redirectTo: `${window.location.origin}/reset-password`
     });
     if (error) {
-      toast.error(error.message);
+      toast.error(`Password reset failed: ${error.message}`);
       throw error;
     }
-    toast.success('Password reset email sent!');
+    toast.success('Password reset email sent! Check your inbox.');
   }, []);
 
   /**
@@ -100,10 +101,10 @@ export const AuthProvider = ({ children }) => {
   const updatePassword = useCallback(async newPassword => {
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     if (error) {
-      toast.error(error.message);
+      toast.error(`Password update failed: ${error.message}`);
       throw error;
     }
-    toast.success('Password updated!');
+    toast.success('Password updated successfully!');
   }, []);
 
   const value = {
