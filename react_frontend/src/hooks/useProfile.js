@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { getUserProfile, updateUserProfile } from '../utils/profileUtils';
+import { getCurrentUser, updateCurrentUser } from '../utils/userUtils';
 import { toast } from 'react-hot-toast';
 
 /**
@@ -28,13 +28,13 @@ export const useProfile = () => {
       setError(null);
 
       try {
-        const { data, error: profileError } = await getUserProfile();
+        const { data, error: userError } = await getCurrentUser();
         
         if (!mounted) return;
 
-        if (profileError) {
-          setError(profileError);
-          toast.error(`Failed to load profile: ${profileError.message}`);
+        if (userError) {
+          setError(userError);
+          toast.error(`Failed to load profile: ${userError.message}`);
         } else {
           setProfile(data);
         }
@@ -68,7 +68,7 @@ export const useProfile = () => {
     }
 
     try {
-      const { data, error: updateError } = await updateUserProfile(updates);
+      const { data, error: updateError } = await updateCurrentUser(updates);
       
       if (updateError) {
         toast.error(`Failed to update profile: ${updateError.message}`);
@@ -92,11 +92,11 @@ export const useProfile = () => {
 
     setLoading(true);
     try {
-      const { data, error: profileError } = await getUserProfile();
+      const { data, error: userError } = await getCurrentUser();
       
-      if (profileError) {
-        setError(profileError);
-        toast.error(`Failed to refresh profile: ${profileError.message}`);
+      if (userError) {
+        setError(userError);
+        toast.error(`Failed to refresh profile: ${userError.message}`);
       } else {
         setProfile(data);
         setError(null);

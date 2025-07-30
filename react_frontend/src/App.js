@@ -10,6 +10,7 @@ import SignUp from './pages/SignUp';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
+import TestPage from './pages/TestPage';
 
 /**
  * PUBLIC_INTERFACE
@@ -48,6 +49,9 @@ export default function App() {
         />
         {/* Reset password is triggered via Supabase email link and does NOT guard */}
         <Route path="/reset-password" element={<ResetPassword />} />
+
+        {/* Test page for signup flow testing */}
+        <Route path="/test" element={<TestPage />} />
 
         {/* Protected dashboard */}
         <Route element={<ProtectedRoute />}>

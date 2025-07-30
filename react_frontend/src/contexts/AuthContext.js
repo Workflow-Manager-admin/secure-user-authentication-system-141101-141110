@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { supabase } from '../supabaseClient';
 import { toast } from 'react-hot-toast';
-import { createUserProfile, getUserProfile } from '../utils/profileUtils';
+import { createUser, userExists } from '../utils/userUtils';
 
 /**
  * Context holding authentication state and actions.
@@ -29,21 +29,21 @@ export const AuthProvider = ({ children }) => {
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       setSession(newSession);
       
-      // If user just signed in and has metadata but no profile, create one
+      // If user just signed in and has metadata but no user record, create one
       if (event === 'SIGNED_IN' && newSession?.user) {
         const user = newSession.user;
         
-        // Check if profile exists
+        // Check if user record exists in users table
         try {
-          const { data: existingProfile, error: profileError } = await getUserProfile();
+          const { exists, error: checkError } = await userExists(user.id);
           
-          // If no profile exists but user has metadata, create profile
-          if (!existingProfile && !profileError && user.user_metadata) {
+          // If no user record exists and user has metadata, create user record
+          if (!exists && !checkError && user.user_metadata) {
             const metadata = user.user_metadata;
             
             if (metadata.first_name && metadata.last_name) {
               try {
-                await createUserProfile({
+                await createUser({
                   id: user.id,
                   email: user.email,
                   first_name: metadata.first_name,
@@ -51,12 +51,12 @@ export const AuthProvider = ({ children }) => {
                   profession: metadata.profession || ''
                 });
               } catch (createError) {
-                console.warn('Failed to create profile on sign in:', createError);
+                console.warn('Failed to create user record on sign in:', createError);
               }
             }
           }
         } catch (error) {
-          console.warn('Error checking/creating profile on sign in:', error);
+          console.warn('Error checking/creating user record on sign in:', error);
         }
       }
     });
@@ -88,10 +88,10 @@ export const AuthProvider = ({ children }) => {
       throw error;
     }
 
-    // If user was created successfully, also create their profile
+    // If user was created successfully, also create their record in users table
     if (signUpData.user) {
       try {
-        const { error: profileError } = await createUserProfile({
+        const { error: userError } = await createUser({
           id: signUpData.user.id,
           email: email,
           first_name: firstName,
@@ -99,14 +99,18 @@ export const AuthProvider = ({ children }) => {
           profession: profession
         });
 
-        if (profileError) {
+        if (userError) {
           // Log the error but don't fail the signup process
-          // The trigger should handle this, but this is a fallback
-          console.warn('Profile creation failed, relying on database trigger:', profileError);
+          // The user record creation is important but shouldn't block authentication
+          console.warn('User record creation failed during signup:', userError);
+          toast.error('Account created but user details storage failed. Please contact support.');
+        } else {
+          console.log('User record successfully created in users table');
         }
-      } catch (profileError) {
+      } catch (userCreationError) {
         // Log the error but don't fail the signup process
-        console.warn('Profile creation failed, relying on database trigger:', profileError);
+        console.warn('User record creation failed during signup:', userCreationError);
+        toast.error('Account created but user details storage failed. Please contact support.');
       }
     }
 
