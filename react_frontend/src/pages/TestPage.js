@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import TestRunner from '../components/TestRunner';
+import { testPasswordResetFlow, debugCurrentSession } from '../utils/resetPasswordDebug';
 
 /**
  * PUBLIC_INTERFACE
@@ -39,6 +40,44 @@ export default function TestPage() {
 
           {/* Test Runner Component */}
           <TestRunner />
+
+          {/* Password Reset Debug Section */}
+          <div className="max-w-4xl mx-auto">
+            <div className="p-6 rounded-xl bg-red-900/20 border border-red-800">
+              <h3 className="text-xl font-semibold text-red-100 mb-4">Password Reset Debug Tools</h3>
+              <div className="space-y-4">
+                <div className="text-sm text-red-200">
+                  <p><strong>Issue:</strong> Password reset emails redirecting to /dashboard instead of /reset-password</p>
+                  <p><strong>Use these tools to debug the issue:</strong></p>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <button
+                    onClick={() => {
+                      const email = prompt('Enter email for password reset test:');
+                      if (email) testPasswordResetFlow(email);
+                    }}
+                    className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200"
+                  >
+                    Test Password Reset Flow
+                  </button>
+                  <button
+                    onClick={debugCurrentSession}
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200"
+                  >
+                    Debug Current Session
+                  </button>
+                </div>
+                <div className="text-xs text-red-300 p-3 bg-red-900/30 rounded">
+                  <p><strong>Console Functions Available:</strong></p>
+                  <ul className="mt-1 space-y-1">
+                    <li>• <code>testPasswordResetFlow('your-email@example.com')</code></li>
+                    <li>• <code>debugCurrentSession()</code></li>
+                    <li>• <code>debugPasswordReset('your-email@example.com')</code></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
 
           {/* Additional Information */}
           <div className="max-w-4xl mx-auto space-y-6">

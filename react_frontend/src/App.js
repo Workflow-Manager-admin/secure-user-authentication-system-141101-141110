@@ -11,6 +11,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
 import TestPage from './pages/TestPage';
+import PasswordResetHandler from './components/PasswordResetHandler';
 
 /**
  * PUBLIC_INTERFACE
@@ -34,22 +35,25 @@ export default function App() {
           element={<Navigate to={user ? '/dashboard' : '/login'} replace />}
         />
 
-        {/* Auth pages – block when already authenticated */}
+        {/* Auth pages – block when already authenticated (except during password reset) */}
         <Route
           path="/login"
-          element={user ? <Navigate to="/dashboard" replace /> : <SignIn />}
+          element={user && !window.location.hash.includes('type=recovery') ? <Navigate to="/dashboard" replace /> : <SignIn />}
         />
         <Route
           path="/signup"
-          element={user ? <Navigate to="/dashboard" replace /> : <SignUp />}
+          element={user && !window.location.hash.includes('type=recovery') ? <Navigate to="/dashboard" replace /> : <SignUp />}
         />
         <Route
           path="/forgot-password"
-          element={user ? <Navigate to="/dashboard" replace /> : <ForgotPassword />}
+          element={user && !window.location.hash.includes('type=recovery') ? <Navigate to="/dashboard" replace /> : <ForgotPassword />}
         />
-        {/* Reset password is triggered via Supabase email link and does NOT guard */}
+        
+        {/* Auth callback handler for email links */}
+        <Route path="/auth/callback" element={<PasswordResetHandler />} />
+        
+        {/* Reset password routes - NO auth guards, let component handle validation */}
         <Route path="/reset-password" element={<ResetPassword />} />
-        {/* NEW: Route to support /reset-pw for email links */}
         <Route path="/reset-pw" element={<ResetPassword />} />
 
         {/* Test page for signup flow testing */}

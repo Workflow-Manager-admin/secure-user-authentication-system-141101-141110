@@ -27,12 +27,19 @@ export const AuthProvider = ({ children }) => {
     initSession();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+      console.log('Auth state change:', event, 'Path:', window.location.pathname, 'Hash:', window.location.hash);
       setSession(newSession);
       
-      // Check if this is a password reset flow by examining the URL
+      // Enhanced password reset flow detection
       const isPasswordResetFlow = window.location.pathname === '/reset-password' || 
                                  window.location.pathname === '/reset-pw' ||
-                                 window.location.hash.includes('type=recovery');
+                                 window.location.pathname === '/auth/callback' ||
+                                 window.location.hash.includes('type=recovery') ||
+                                 window.location.hash.includes('access_token') ||
+                                 (event === 'PASSWORD_RECOVERY' || event === 'TOKEN_REFRESHED') ||
+                                 document.referrer.includes('supabase');
+      
+      console.log('Is password reset flow:', isPasswordResetFlow);
       
       // If user just signed in and has metadata but no user record, create one
       // Skip automatic redirects during password reset flow
@@ -73,11 +80,10 @@ export const AuthProvider = ({ children }) => {
   /**
    * PUBLIC_INTERFACE
    * Sign up user with email, password, and user metadata.
-   * Ensures the email confirmation link from Supabase redirects user to /reset-pw.
+   * Ensures the email confirmation link from Supabase redirects user to /login.
    */
-  const { getURL } = require('../utils/getURL'); // Dynamic site URL utility
-
   const signUp = useCallback(async ({ email, password, firstName, lastName, profession }) => {
+    const { getURL } = require('../utils/getURL');
     const siteUrl = getURL().replace(/\/$/, '');
     // For signup and email verification, after user confirms email, redirect to /login per requirements
     const { data: signUpData, error } = await supabase.auth.signUp({
@@ -157,21 +163,22 @@ export const AuthProvider = ({ children }) => {
   /**
    * PUBLIC_INTERFACE
    * Send password reset email.
-   * Ensures password reset email redirect always points to the reset password page.
+   * Ensures password reset email redirect always points to the callback handler.
    */
   const resetPassword = useCallback(async email => {
     const { getURL } = require('../utils/getURL');
     const siteUrl = getURL().replace(/\/$/, '');
-    // Reset password emails should redirect to /reset-password to ensure proper routing
+    // Use callback URL for better redirect handling of password reset emails
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${siteUrl}/reset-password`
+      redirectTo: `${siteUrl}/auth/callback`
     });
     if (error) {
       toast.error(`Password reset failed: ${error.message}`);
       throw error;
     }
     toast.success('Password reset email sent! Check your inbox.');
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // getURL is dynamically imported, dependency not needed
 
   /**
    * PUBLIC_INTERFACE

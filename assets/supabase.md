@@ -67,7 +67,7 @@ The application uses Supabase Auth with email/password authentication. Ensure th
 ### Email Redirects
 The application handles the following email redirect flows:
 - Email confirmation after signup
-- Password reset emails redirect to `/reset-password`
+- Password reset emails redirect to `/auth/callback` then `/reset-password`
 
 Make sure your site URL is configured in Supabase Auth settings to match your `REACT_APP_SITE_URL`.
 
@@ -126,7 +126,7 @@ The following database components have been successfully configured:
 The React application has been integrated with the following features:
 
 1. **URL Utilities**: Dynamic site URL handling for development/production
-2. **Auth Callbacks**: Proper email redirect handling
+2. **Auth Callbacks**: Proper email redirect handling via callback route
 3. **Error Handling**: Comprehensive authentication error management
 4. **User Management**: Full CRUD operations for user records
 
@@ -142,7 +142,7 @@ REACT_APP_SITE_URL=https://project-2025-07-30-084829.kavia.app (production deplo
 
 **Note**: The application now uses the deployed URL `https://project-2025-07-30-084829.kavia.app` for all authentication email redirects including:
 - Email verification after signup
-- Password reset emails
+- Password reset emails (via callback handler)
 - Magic link authentication
 - OAuth provider redirects
 
@@ -156,21 +156,34 @@ REACT_APP_SITE_URL=https://project-2025-07-30-084829.kavia.app (production deplo
      - `http://localhost:3000/**` (for development)
      - `https://project-2025-07-30-084829.kavia.app/**` (for production)
      - `https://project-2025-07-30-084829.kavia.app/login` (auth redirects)
-     - `https://project-2025-07-30-084829.kavia.app/reset-password` (password reset)
+     - `https://project-2025-07-30-084829.kavia.app/auth/callback` (email callback handler)
+     - `https://project-2025-07-30-084829.kavia.app/reset-password` (password reset page)
 
 2. **Email Templates** (optional):
    - Customize confirmation and password reset email templates
    - Use {{ .SiteURL }} and {{ .RedirectTo }} template variables
-   - Email links will now redirect to the deployed application
+   - Email links will now redirect to the deployed application via the callback handler
+
+### Password Reset Flow Fix
+
+**CRITICAL FIX IMPLEMENTED**: The password reset email redirect issue has been resolved with the following changes:
+
+1. **Callback Handler**: Password reset emails now redirect to `/auth/callback` which properly processes authentication tokens before routing to `/reset-password`
+
+2. **Enhanced Session Detection**: Improved detection of password reset flows in AuthContext to prevent unwanted redirects during recovery
+
+3. **Route Protection**: Updated routing logic to avoid authentication guards interfering with password reset flows
+
+4. **Debug Tools**: Added comprehensive debugging tools available on `/test` page for troubleshooting
 
 ### Integration Summary
 
 - ✅ Database tables and policies configured
 - ✅ Authentication flows integrated
-- ✅ Error handling implemented
+- ✅ Error handling implemented  
 - ✅ URL management for dev/prod environments
 - ✅ User record management utilities
 - ✅ RLS security policies active
+- ✅ **Password reset email redirect issue FIXED**
 
-The Supabase configuration is now complete and ready for production use.
-=======
+The Supabase configuration is now complete and ready for production use. The password reset flow now properly routes users to the reset password page instead of the dashboard.

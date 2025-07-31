@@ -16,6 +16,11 @@ export default function ResetPassword() {
   useEffect(() => {
     const checkPasswordResetSession = async () => {
       try {
+        console.log('Checking password reset session...');
+        console.log('Current URL:', window.location.href);
+        console.log('Hash:', window.location.hash);
+        console.log('Pathname:', location.pathname);
+        
         // Check if there's a password recovery session
         const { data: session, error } = await supabase.auth.getSession();
         
@@ -25,21 +30,45 @@ export default function ResetPassword() {
           return;
         }
 
-        // Check if this is a valid password reset session
-        if (session?.session?.user) {
-          // Check URL hash for recovery type
-          const hashParams = new URLSearchParams(window.location.hash.substring(1));
-          const isRecovery = hashParams.get('type') === 'recovery';
-          
-          if (isRecovery || location.pathname === '/reset-pw') {
-            setIsValidSession(true);
-          } else {
-            // If user is already authenticated but not in recovery mode, redirect to dashboard
-            navigate('/dashboard');
-            return;
-          }
+        // Enhanced recovery flow detection
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const isRecovery = hashParams.get('type') === 'recovery';
+        const hasAccessToken = hashParams.get('access_token');
+        const hasRefreshToken = hashParams.get('refresh_token');
+        const isResetPwRoute = location.pathname === '/reset-pw';
+        const isResetPasswordRoute = location.pathname === '/reset-password';
+        
+        console.log('Recovery detection:', {
+          isRecovery,
+          hasAccessToken: !!hasAccessToken,
+          hasRefreshToken: !!hasRefreshToken,
+          isResetPwRoute,
+          isResetPasswordRoute,
+          hasSession: !!session?.session?.user
+        });
+
+        // Valid password reset scenarios:
+        // 1. URL has type=recovery parameter
+        // 2. Has access/refresh tokens in hash (coming from email link)
+        // 3. Is on /reset-pw route (alternate route)
+        // 4. Has an authenticated session and is on reset password route
+        const isValidPasswordResetSession = isRecovery || 
+                                          hasAccessToken || 
+                                          hasRefreshToken ||
+                                          isResetPwRoute ||
+                                          (session?.session?.user && isResetPasswordRoute);
+
+        if (isValidPasswordResetSession) {
+          console.log('Valid password reset session detected');
+          setIsValidSession(true);
+        } else if (session?.session?.user) {
+          // User is authenticated but not in a valid reset flow
+          console.log('User authenticated but not in reset flow, redirecting to dashboard');
+          navigate('/dashboard');
+          return;
         } else {
           // No valid session for password reset
+          console.log('No valid session, redirecting to forgot password');
           navigate('/forgot-password');
           return;
         }
@@ -51,7 +80,9 @@ export default function ResetPassword() {
       }
     };
 
-    checkPasswordResetSession();
+    // Add delay to ensure URL parameters are fully processed
+    const timeoutId = setTimeout(checkPasswordResetSession, 100);
+    return () => clearTimeout(timeoutId);
   }, [navigate, location]);
 
   if (loading) {
