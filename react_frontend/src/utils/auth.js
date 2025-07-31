@@ -47,10 +47,21 @@ export const signIn = async (email, password) => {
  * @param {string} email - User email
  * @returns {Promise<{data: Object|null, error: Error|null}>}
  */
+/**
+ * DEPRECATED: Do not use this resetPassword utility directly!
+ * Use the resetPassword function from AuthContext, which uses /auth/callback for proper redirect/session handling.
+ * This function is left here for backwards compatibility but should NOT be called.
+ * 
+ * If you want to initiate password reset, import and use useAuth().resetPassword (from AuthContext).
+ * 
+ * Attempting to reset password via /reset-pw (direct) can break Supabase session flow,
+ * and result in user being redirected to the dashboard if already authenticated, instead of reset-password page.
+ */
 export const resetPassword = async (email) => {
   const siteUrl = getURL().replace(/\/$/, '');
+  // Always redirect via /auth/callback for robust, secure password reset flow
   const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${siteUrl}/reset-pw`
+    redirectTo: `${siteUrl}/auth/callback`
   })
   return { data, error }
 }

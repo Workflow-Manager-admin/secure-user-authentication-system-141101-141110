@@ -1,3 +1,14 @@
+/**
+ * Password Reset Page
+ * -------------------
+ * This component handles password resets. It is *never* shown unless the user:
+ *   - Arrived here via a Supabase password reset email (handled by /auth/callback)
+ *   - Has a valid recovery token/session
+ * Direct navigation here while logged in will redirect user to dashboard to prevent confusion/abuse.
+ * 
+ * DO NOT bypass /auth/callback for password resets; always ensure email links point to /auth/callback.
+ */
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -37,7 +48,7 @@ export default function ResetPassword() {
         const hasRefreshToken = hashParams.get('refresh_token');
         const isResetPwRoute = location.pathname === '/reset-pw';
         const isResetPasswordRoute = location.pathname === '/reset-password';
-        
+
         console.log('Recovery detection:', {
           isRecovery,
           hasAccessToken: !!hasAccessToken,
@@ -47,17 +58,14 @@ export default function ResetPassword() {
           hasSession: !!session?.session?.user
         });
 
-        // Valid password reset scenarios:
-        // 1. URL has type=recovery parameter
-        // 2. Has access/refresh tokens in hash (coming from email link)
-        // 3. Is on /reset-pw route (alternate route)
-        // 4. Has an authenticated session and is on reset password route
+        // Acceptable reset only if (1) URL has type=recovery parameter OR (2) has access/refresh token
+        // (3) /reset-pw is legacy, but should only be hit in a real recovery flow, not direct navigation
+        
         const isValidPasswordResetSession = isRecovery || 
-                                          hasAccessToken || 
-                                          hasRefreshToken ||
-                                          isResetPwRoute ||
-                                          (session?.session?.user && isResetPasswordRoute);
-
+                                            hasAccessToken || 
+                                            hasRefreshToken ||
+                                            (session?.session?.user && isResetPasswordRoute);
+        // Future: (do not allow /reset-pw direct nav - guide to forgot-password instead)
         if (isValidPasswordResetSession) {
           console.log('Valid password reset session detected');
           setIsValidSession(true);
