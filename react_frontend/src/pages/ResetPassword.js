@@ -41,6 +41,10 @@ export default function ResetPassword() {
           return;
         }
 
+        // Check for persistent reset flow marker
+        const RESET_FLOW_KEY = 'password_reset_flow';
+        const isStoredResetFlow = localStorage.getItem(RESET_FLOW_KEY) === 'true';
+        
         // Enhanced recovery flow detection
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         const isRecovery = hashParams.get('type') === 'recovery';
@@ -55,21 +59,31 @@ export default function ResetPassword() {
           hasRefreshToken: !!hasRefreshToken,
           isResetPwRoute,
           isResetPasswordRoute,
-          hasSession: !!session?.session?.user
+          hasSession: !!session?.session?.user,
+          isStoredResetFlow
         });
 
-        // Acceptable reset only if (1) URL has type=recovery parameter OR (2) has access/refresh token
-        // (3) /reset-pw is legacy, but should only be hit in a real recovery flow, not direct navigation
-        
-        const isValidPasswordResetSession = isRecovery || 
-                                            hasAccessToken || 
-                                            hasRefreshToken ||
-                                            (session?.session?.user && isResetPasswordRoute);
-        // Future: (do not allow /reset-pw direct nav - guide to forgot-password instead)
+        // Set persistent marker if we have recovery indicators
+        if (isRecovery || hasAccessToken || hasRefreshToken) {
+          localStorage.setItem(RESET_FLOW_KEY, 'true');
+        }
+
+        // Acceptable reset only if:
+        // 1. URL has type=recovery parameter
+        // 2. Has access/refresh token
+        // 3. Has persistent reset flow marker
+        // 4. Has valid session and is on reset-password route with persistent marker
+        const isValidPasswordResetSession = isStoredResetFlow && (
+          isRecovery || 
+          hasAccessToken || 
+          hasRefreshToken ||
+          (session?.session?.user && isResetPasswordRoute)
+        );
+
         if (isValidPasswordResetSession) {
           console.log('Valid password reset session detected');
           setIsValidSession(true);
-        } else if (session?.session?.user) {
+        } else if (session?.session?.user && !isStoredResetFlow) {
           // User is authenticated but not in a valid reset flow
           console.log('User authenticated but not in reset flow, redirecting to dashboard');
           navigate('/dashboard');
@@ -106,7 +120,9 @@ export default function ResetPassword() {
     setSubmitting(true);
     try {
       await updatePassword(password);
-      // After successful password update, redirect to login
+      // AuthContext will clear the reset flow marker
+      // Redirect to login with clean state
+      localStorage.removeItem('password_reset_flow');
       navigate('/login', { replace: true });
     } catch (error) {
       // Error is already handled by AuthContext with toast
