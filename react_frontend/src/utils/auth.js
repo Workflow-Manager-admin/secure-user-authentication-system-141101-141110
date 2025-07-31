@@ -20,7 +20,7 @@ export const signUp = async (email, password, metadata = {}) => {
     password,
     options: {
       // Always use the fixed site root for confirmation link
-      emailRedirectTo: `https://project-2025-07-30-084829-3.kavia.app/login`,
+      emailRedirectTo: `https://project-2025-07-30-084829-4.kavia.app/login`,
       data: metadata
     }
   })
@@ -49,7 +49,7 @@ export const signIn = async (email, password) => {
 export const resetPassword = async (email) => {
   const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
     // Always use the fixed reset password route
-    redirectTo: `https://project-2025-07-30-084829-3.kavia.app/reset-password`
+    redirectTo: `https://project-2025-07-30-084829-4.kavia.app/reset-password`
   })
   return { data, error }
 }
@@ -64,7 +64,7 @@ export const signInWithMagicLink = async (email) => {
     email,
     options: {
       // Always direct magic link auth to required login page
-      emailRedirectTo: `https://project-2025-07-30-084829-3.kavia.app/login`
+      emailRedirectTo: `https://project-2025-07-30-084829-4.kavia.app/login`
     }
   })
   return { data, error }
@@ -80,7 +80,7 @@ export const signInWithOAuth = async (provider) => {
     provider,
     options: {
       // Always direct OAuth redirect to the fixed login URI
-      redirectTo: `https://project-2025-07-30-084829-3.kavia.app/login`
+      redirectTo: `https://project-2025-07-30-084829-4.kavia.app/login`
     }
   })
   return { data, error }
