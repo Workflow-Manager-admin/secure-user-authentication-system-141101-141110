@@ -51,12 +51,16 @@ export const AuthProvider = ({ children }) => {
       // Set persistent marker for password reset flows
       if (isRecoveryHash || hasAccessToken || hasRefreshToken || event === 'PASSWORD_RECOVERY') {
         localStorage.setItem(RESET_FLOW_KEY, 'true');
+        sessionStorage.setItem('password_reset_attempt', 'true');
+        localStorage.setItem('password_reset_timestamp', Date.now().toString());
         console.log('Password reset flow marker set');
       }
       
       // Clear marker when user completes normal sign in (not during password reset)
       if (event === 'SIGNED_IN' && !isPasswordResetFlow) {
         localStorage.removeItem(RESET_FLOW_KEY);
+        sessionStorage.removeItem('password_reset_attempt');
+        localStorage.removeItem('password_reset_timestamp');
         console.log('Password reset flow marker cleared for normal sign in');
       }
       
@@ -198,6 +202,8 @@ export const AuthProvider = ({ children }) => {
       throw error;
     }
     localStorage.setItem('password_reset_flow', 'true');
+    sessionStorage.setItem('password_reset_attempt', 'true');
+    localStorage.setItem('password_reset_timestamp', Date.now().toString());
     toast.success('Password reset email sent! Check your inbox.');
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // getURL is dynamically imported, dependency not needed
@@ -215,6 +221,8 @@ export const AuthProvider = ({ children }) => {
       }
       // Clear password reset flow marker on successful update
       localStorage.removeItem('password_reset_flow');
+      sessionStorage.removeItem('password_reset_attempt');
+      localStorage.removeItem('password_reset_timestamp');
       toast.success('Password updated successfully!');
     } catch (error) {
       toast.error(`Password update failed: ${error.message}`);
@@ -225,6 +233,8 @@ export const AuthProvider = ({ children }) => {
   /**
    * PUBLIC_INTERFACE
    * Check if user is currently in a password reset flow
+   * This function provides comprehensive detection to ensure users coming from
+   * password reset emails are NEVER redirected away from the reset flow
    */
   const isInPasswordResetFlow = useCallback(() => {
     const RESET_FLOW_KEY = 'password_reset_flow';
@@ -235,7 +245,55 @@ export const AuthProvider = ({ children }) => {
     const isCallbackPath = window.location.pathname === '/auth/callback';
     const isResetPath = window.location.pathname === '/reset-password' || window.location.pathname === '/reset-pw';
     
-    return isStoredResetFlow || isRecoveryHash || hasAccessToken || hasRefreshToken || isCallbackPath || isResetPath;
+    // Additional checks for more comprehensive detection
+    const hasResetTokenInUrl = window.location.href.includes('access_token') || window.location.href.includes('refresh_token');
+    const isFromEmailProvider = document.referrer.includes('supabase') || 
+                               document.referrer.includes('mail') || 
+                               document.referrer.includes('gmail') ||
+                               document.referrer.includes('outlook') ||
+                               document.referrer.includes('yahoo');
+    const hasSessionStorageMarker = sessionStorage.getItem('password_reset_attempt') === 'true';
+    
+    // Check URL search params as well (backup detection)
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasResetParam = urlParams.get('type') === 'recovery' || urlParams.get('reset') === 'true';
+    
+    // Check if reset attempt was recent (within last 10 minutes)
+    const recentResetAttempt = localStorage.getItem('password_reset_timestamp') && 
+                              (Date.now() - parseInt(localStorage.getItem('password_reset_timestamp'))) < 10 * 60 * 1000;
+    
+    const isInResetFlow = isStoredResetFlow || 
+                         isRecoveryHash || 
+                         hasAccessToken || 
+                         hasRefreshToken || 
+                         isCallbackPath || 
+                         isResetPath ||
+                         hasResetTokenInUrl ||
+                         isFromEmailProvider ||
+                         hasSessionStorageMarker ||
+                         hasResetParam ||
+                         recentResetAttempt;
+    
+    // Log for debugging purposes
+    if (isInResetFlow) {
+      console.log('Password reset flow detected:', {
+        isStoredResetFlow,
+        isRecoveryHash,
+        hasAccessToken,
+        hasRefreshToken,
+        isCallbackPath,
+        isResetPath,
+        hasResetTokenInUrl,
+        isFromEmailProvider,
+        hasSessionStorageMarker,
+        hasResetParam,
+        recentResetAttempt,
+        currentUrl: window.location.href,
+        referrer: document.referrer
+      });
+    }
+    
+    return isInResetFlow;
   }, []);
 
   const value = {
