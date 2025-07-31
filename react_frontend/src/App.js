@@ -22,9 +22,9 @@ import PasswordResetHandler from './components/PasswordResetHandler';
 export default function App() {
   const { user, loading, isInPasswordResetFlow } = useAuth();
 
-  // While AuthContext initialises, keep UI minimal
+  // While AuthContext initialises, keep UI minimal with timeout
   if (loading) {
-    return <LoadingScreen />;
+    return <LoadingScreen timeout={12000} />;
   }
 
   // Enhanced password reset flow detection for routing decisions

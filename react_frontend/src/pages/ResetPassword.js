@@ -136,13 +136,22 @@ export default function ResetPassword() {
   const handleSubmit = async e => {
     e.preventDefault();
     setSubmitting(true);
+    
+    // Set timeout for the operation
+    const timeoutId = setTimeout(() => {
+      console.warn('⚠️ Update password operation timeout');
+      setSubmitting(false);
+    }, 30000); // 30 second timeout
+    
     try {
       await updatePassword(password);
+      clearTimeout(timeoutId);
       // AuthContext will clear the reset flow marker
       // Redirect to login with clean state
       localStorage.removeItem('password_reset_flow');
       navigate('/login', { replace: true });
     } catch (error) {
+      clearTimeout(timeoutId);
       // Error is already handled by AuthContext with toast
     } finally {
       setSubmitting(false);

@@ -14,10 +14,19 @@ export default function SignIn() {
   const handleSubmit = async e => {
     e.preventDefault();
     setSubmitting(true);
+    
+    // Set timeout for the operation
+    const timeoutId = setTimeout(() => {
+      console.warn('⚠️ Sign in operation timeout');
+      setSubmitting(false);
+    }, 30000); // 30 second timeout
+    
     try {
       await signIn(form);
+      clearTimeout(timeoutId);
       navigate('/dashboard', { replace: true });
     } catch (error) {
+      clearTimeout(timeoutId);
       // Error is already handled by AuthContext with toast
     } finally {
       setSubmitting(false);

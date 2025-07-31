@@ -16,19 +16,58 @@ export const AuthProvider = ({ children }) => {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Initialise session and subscribe to changes
+  // Initialise session and subscribe to changes with timeout and error handling
   useEffect(() => {
+    let isMounted = true;
+    let timeoutId;
+    
     const initSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      setSession(data.session);
-      setLoading(false);
+      try {
+        // Set a timeout to prevent infinite loading
+        timeoutId = setTimeout(() => {
+          if (isMounted) {
+            console.warn('⚠️ Auth initialization timeout, setting loading to false');
+            setLoading(false);
+          }
+        }, 10000); // 10 second timeout
+        
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (timeoutId) {
+          clearTimeout(timeoutId);
+        }
+        
+        if (isMounted) {
+          if (error) {
+            console.error('❌ Error getting session:', error);
+            setSession(null);
+          } else {
+            setSession(data.session);
+          }
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('❌ Critical error during auth initialization:', error);
+        if (isMounted) {
+          setSession(null);
+          setLoading(false);
+        }
+      }
     };
 
     initSession();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       console.log('Auth state change:', event, 'Path:', window.location.pathname, 'Hash:', window.location.hash);
+      
+      if (!isMounted) return;
+      
       setSession(newSession);
+      
+      // Ensure loading is always false after auth state changes
+      if (loading) {
+        setLoading(false);
+      }
       
       // Enhanced password reset flow detection with persistent marker
       const RESET_FLOW_KEY = 'password_reset_flow';
@@ -107,8 +146,14 @@ export const AuthProvider = ({ children }) => {
       }
     });
 
-    return () => authListener.subscription.unsubscribe();
-  }, []);
+    return () => {
+      isMounted = false;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      authListener.subscription.unsubscribe();
+    };
+  }, []); // loading is intentionally excluded as it's managed internally
 
   /**
    * PUBLIC_INTERFACE
