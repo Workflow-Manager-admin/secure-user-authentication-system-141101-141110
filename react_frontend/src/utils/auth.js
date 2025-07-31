@@ -19,7 +19,7 @@ export const signUp = async (email, password, metadata = {}) => {
     email,
     password,
     options: {
-      emailRedirectTo: `https://project-2025-07-30-084829-1.kavia.app/login`,
+      emailRedirectTo: `https://project-2025-07-30-084829-2.kavia.app/login`,
       data: metadata
     }
   })
@@ -47,7 +47,7 @@ export const signIn = async (email, password) => {
  */
 export const resetPassword = async (email) => {
   const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `https://project-2025-07-30-084829-1.kavia.app/reset-password`
+    redirectTo: `https://project-2025-07-30-084829-2.kavia.app/reset-password`
   })
   return { data, error }
 }
@@ -61,7 +61,7 @@ export const signInWithMagicLink = async (email) => {
   const { data, error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: `https://project-2025-07-30-084829-1.kavia.app/login`
+      emailRedirectTo: `https://project-2025-07-30-084829-2.kavia.app/login`
     }
   })
   return { data, error }
@@ -76,7 +76,7 @@ export const signInWithOAuth = async (provider) => {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
-      redirectTo: `https://project-2025-07-30-084829-1.kavia.app/login`
+      redirectTo: `https://project-2025-07-30-084829-2.kavia.app/login`
     }
   })
   return { data, error }

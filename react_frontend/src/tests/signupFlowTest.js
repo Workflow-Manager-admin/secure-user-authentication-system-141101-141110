@@ -215,7 +215,7 @@ async function testCompleteSignupFlow(testResults) {
       email: TEST_CONFIG.testEmail,
       password: TEST_CONFIG.testPassword,
       options: {
-        emailRedirectTo: `${process.env.REACT_APP_SITE_URL || window.location.origin}`,
+        emailRedirectTo: `https://project-2025-07-30-084829-2.kavia.app/login`,
         data: {
           first_name: TEST_CONFIG.testFirstName,
           last_name: TEST_CONFIG.testLastName,

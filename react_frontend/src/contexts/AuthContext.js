@@ -73,7 +73,7 @@ export const AuthProvider = ({ children }) => {
       email,
       password,
       options: {
-        emailRedirectTo: `https://project-2025-07-30-084829.kavia.app/login`,
+        emailRedirectTo: `https://project-2025-07-30-084829-2.kavia.app/login`,
         data: {
           first_name: firstName,
           last_name: lastName,
@@ -149,7 +149,7 @@ export const AuthProvider = ({ children }) => {
    */
   const resetPassword = useCallback(async email => {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `https://project-2025-07-30-084829.kavia.app/reset-password`
+      redirectTo: `https://project-2025-07-30-084829-2.kavia.app/reset-password`
     });
     if (error) {
       toast.error(`Password reset failed: ${error.message}`);
