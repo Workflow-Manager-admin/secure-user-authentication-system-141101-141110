@@ -137,24 +137,31 @@ Ensure these environment variables are set:
 ```bash
 REACT_APP_SUPABASE_URL=your_supabase_project_url
 REACT_APP_SUPABASE_KEY=your_supabase_anon_key
-REACT_APP_SITE_URL=your_site_url (optional, defaults to localhost:3000)
+REACT_APP_SITE_URL=https://project-2025-07-30-084829.kavia.app (production deployment URL)
 ```
+
+**Note**: The application now uses the deployed URL `https://project-2025-07-30-084829.kavia.app` for all authentication email redirects including:
+- Email verification after signup
+- Password reset emails
+- Magic link authentication
+- OAuth provider redirects
 
 ### Supabase Dashboard Configuration
 
 **IMPORTANT**: In your Supabase Dashboard, configure the following:
 
 1. **Authentication > URL Configuration**:
-   - Site URL: Set to your production domain (e.g., https://yourapp.com)
+   - Site URL: Set to `https://project-2025-07-30-084829.kavia.app`
    - Redirect URLs: Add these URLs:
      - `http://localhost:3000/**` (for development)
-     - `https://yourapp.com/**` (for production)
-     - `http://localhost:3000/auth/callback` (auth callback)
-     - `https://yourapp.com/auth/callback` (production callback)
+     - `https://project-2025-07-30-084829.kavia.app/**` (for production)
+     - `https://project-2025-07-30-084829.kavia.app/login` (auth redirects)
+     - `https://project-2025-07-30-084829.kavia.app/reset-password` (password reset)
 
 2. **Email Templates** (optional):
    - Customize confirmation and password reset email templates
    - Use {{ .SiteURL }} and {{ .RedirectTo }} template variables
+   - Email links will now redirect to the deployed application
 
 ### Integration Summary
 
