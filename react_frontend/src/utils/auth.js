@@ -16,12 +16,12 @@ import { toast } from 'react-hot-toast'
  */
 export const signUp = async (email, password, metadata = {}) => {
   const siteUrl = getURL().replace(/\/$/, '');
+  // After verification, redirect new user to /login per requirements
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      // Dynamic confirmation link for environment (never hardcoded!):
-      emailRedirectTo: `${siteUrl}/reset-pw`,
+      emailRedirectTo: `${siteUrl}/login`,
       data: metadata
     }
   })

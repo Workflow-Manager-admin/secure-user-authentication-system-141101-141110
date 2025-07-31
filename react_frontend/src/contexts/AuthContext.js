@@ -73,12 +73,12 @@ export const AuthProvider = ({ children }) => {
 
   const signUp = useCallback(async ({ email, password, firstName, lastName, profession }) => {
     const siteUrl = getURL().replace(/\/$/, '');
+    // For signup and email verification, after user confirms email, redirect to /login per requirements
     const { data: signUpData, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        // Use dynamic site URL for all confirmation links, ensures new domain/path is always used
-        emailRedirectTo: `${siteUrl}/reset-pw`,
+        emailRedirectTo: `${siteUrl}/login`,
         data: {
           first_name: firstName,
           last_name: lastName,
@@ -156,6 +156,7 @@ export const AuthProvider = ({ children }) => {
   const resetPassword = useCallback(async email => {
     const { getURL } = require('../utils/getURL');
     const siteUrl = getURL().replace(/\/$/, '');
+    // Reset password emails should redirect to /reset-pw on this deploy
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${siteUrl}/reset-pw`
     });
