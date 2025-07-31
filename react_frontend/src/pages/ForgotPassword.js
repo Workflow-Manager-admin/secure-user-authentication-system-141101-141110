@@ -10,9 +10,18 @@ export default function ForgotPassword() {
   const handleSubmit = async e => {
     e.preventDefault();
     setSending(true);
+    
+    // Set timeout for the operation
+    const timeoutId = setTimeout(() => {
+      console.warn('⚠️ Reset password operation timeout');
+      setSending(false);
+    }, 30000); // 30 second timeout
+    
     try {
       await resetPassword(email);
+      clearTimeout(timeoutId);
     } catch (error) {
+      clearTimeout(timeoutId);
       // Error is already handled by AuthContext with toast
     } finally {
       setSending(false);

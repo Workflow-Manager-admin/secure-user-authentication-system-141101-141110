@@ -81,6 +81,13 @@ export default function SignUp() {
     }
 
     setSubmitting(true);
+    
+    // Set timeout for the operation
+    const timeoutId = setTimeout(() => {
+      console.warn('⚠️ Sign up operation timeout');
+      setSubmitting(false);
+    }, 30000); // 30 second timeout
+    
     try {
       const finalProfession = form.profession === 'Other' ? form.customProfession : form.profession;
       
@@ -92,8 +99,10 @@ export default function SignUp() {
         profession: finalProfession
       });
       
+      clearTimeout(timeoutId);
       navigate('/login', { replace: true });
     } catch (error) {
+      clearTimeout(timeoutId);
       // Error is already handled by AuthContext with toast
     } finally {
       setSubmitting(false);

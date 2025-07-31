@@ -11,9 +11,11 @@ export default function Dashboard() {
   const handleLogout = async () => {
     try {
       await signOut();
-      navigate('/login', { replace: true });
+      // Don't navigate here - let the auth state change handle routing automatically
+      // The user state will be cleared immediately in signOut, triggering App.js to redirect
     } catch (error) {
       // Error is already handled by AuthContext with toast
+      console.error('Sign out failed:', error);
     }
   };
 
