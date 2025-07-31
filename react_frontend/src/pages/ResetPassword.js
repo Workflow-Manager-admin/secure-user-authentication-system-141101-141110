@@ -1,18 +1,104 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../supabaseClient';
+import LoadingScreen from '../components/LoadingScreen';
 
 export default function ResetPassword() {
   const { updatePassword } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [isValidSession, setIsValidSession] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkPasswordResetSession = async () => {
+      try {
+        console.log('Checking password reset session...');
+        console.log('Current URL:', window.location.href);
+        console.log('Hash:', window.location.hash);
+        console.log('Pathname:', location.pathname);
+        
+        // Check if there's a password recovery session
+        const { data: session, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+          navigate('/forgot-password');
+          return;
+        }
+
+        // Enhanced recovery flow detection
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const isRecovery = hashParams.get('type') === 'recovery';
+        const hasAccessToken = hashParams.get('access_token');
+        const hasRefreshToken = hashParams.get('refresh_token');
+        const isResetPwRoute = location.pathname === '/reset-pw';
+        const isResetPasswordRoute = location.pathname === '/reset-password';
+        
+        console.log('Recovery detection:', {
+          isRecovery,
+          hasAccessToken: !!hasAccessToken,
+          hasRefreshToken: !!hasRefreshToken,
+          isResetPwRoute,
+          isResetPasswordRoute,
+          hasSession: !!session?.session?.user
+        });
+
+        // Valid password reset scenarios:
+        // 1. URL has type=recovery parameter
+        // 2. Has access/refresh tokens in hash (coming from email link)
+        // 3. Is on /reset-pw route (alternate route)
+        // 4. Has an authenticated session and is on reset password route
+        const isValidPasswordResetSession = isRecovery || 
+                                          hasAccessToken || 
+                                          hasRefreshToken ||
+                                          isResetPwRoute ||
+                                          (session?.session?.user && isResetPasswordRoute);
+
+        if (isValidPasswordResetSession) {
+          console.log('Valid password reset session detected');
+          setIsValidSession(true);
+        } else if (session?.session?.user) {
+          // User is authenticated but not in a valid reset flow
+          console.log('User authenticated but not in reset flow, redirecting to dashboard');
+          navigate('/dashboard');
+          return;
+        } else {
+          // No valid session for password reset
+          console.log('No valid session, redirecting to forgot password');
+          navigate('/forgot-password');
+          return;
+        }
+      } catch (error) {
+        console.error('Error checking password reset session:', error);
+        navigate('/forgot-password');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Add delay to ensure URL parameters are fully processed
+    const timeoutId = setTimeout(checkPasswordResetSession, 100);
+    return () => clearTimeout(timeoutId);
+  }, [navigate, location]);
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
+
+  if (!isValidSession) {
+    return <LoadingScreen />;
+  }
 
   const handleSubmit = async e => {
     e.preventDefault();
     setSubmitting(true);
     try {
       await updatePassword(password);
+      // After successful password update, redirect to login
       navigate('/login', { replace: true });
     } catch (error) {
       // Error is already handled by AuthContext with toast
