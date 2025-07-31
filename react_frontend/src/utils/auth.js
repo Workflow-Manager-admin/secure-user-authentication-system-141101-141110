@@ -15,11 +15,13 @@ import { toast } from 'react-hot-toast'
  * @returns {Promise<{data: Object|null, error: Error|null}>}
  */
 export const signUp = async (email, password, metadata = {}) => {
+  const siteUrl = getURL().replace(/\/$/, '');
+  // After verification, redirect new user to /login per requirements
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      emailRedirectTo: `https://project-2025-07-30-084829-1.kavia.app/login`,
+      emailRedirectTo: `${siteUrl}/login`,
       data: metadata
     }
   })
@@ -46,8 +48,9 @@ export const signIn = async (email, password) => {
  * @returns {Promise<{data: Object|null, error: Error|null}>}
  */
 export const resetPassword = async (email) => {
+  const siteUrl = getURL().replace(/\/$/, '');
   const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `https://project-2025-07-30-084829-1.kavia.app/reset-password`
+    redirectTo: `${siteUrl}/reset-pw`
   })
   return { data, error }
 }
@@ -58,10 +61,11 @@ export const resetPassword = async (email) => {
  * @returns {Promise<{data: Object|null, error: Error|null}>}
  */
 export const signInWithMagicLink = async (email) => {
+  const siteUrl = getURL().replace(/\/$/, '');
   const { data, error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: `https://project-2025-07-30-084829-1.kavia.app/login`
+      emailRedirectTo: `${siteUrl}/login`
     }
   })
   return { data, error }
@@ -73,10 +77,11 @@ export const signInWithMagicLink = async (email) => {
  * @returns {Promise<{data: Object|null, error: Error|null}>}
  */
 export const signInWithOAuth = async (provider) => {
+  const siteUrl = getURL().replace(/\/$/, '');
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
-      redirectTo: `https://project-2025-07-30-084829-1.kavia.app/login`
+      redirectTo: `${siteUrl}/login`
     }
   })
   return { data, error }

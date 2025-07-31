@@ -211,11 +211,12 @@ async function testCompleteSignupFlow(testResults) {
     console.log('\n🔄 Testing complete signup flow...');
     
     // Step 1: Attempt Supabase Auth signup
+    // Use updated deployed domain and required /login endpoint for confirmation
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email: TEST_CONFIG.testEmail,
       password: TEST_CONFIG.testPassword,
       options: {
-        emailRedirectTo: `${process.env.REACT_APP_SITE_URL || window.location.origin}`,
+        emailRedirectTo: `https://project-2025-07-30-084829-3.kavia.app/login`,
         data: {
           first_name: TEST_CONFIG.testFirstName,
           last_name: TEST_CONFIG.testLastName,
