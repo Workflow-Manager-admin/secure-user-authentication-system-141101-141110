@@ -30,16 +30,27 @@ export const AuthProvider = ({ children }) => {
       console.log('Auth state change:', event, 'Path:', window.location.pathname, 'Hash:', window.location.hash);
       setSession(newSession);
       
-      // Enhanced password reset flow detection
-      const isPasswordResetFlow = window.location.pathname === '/reset-password' || 
+      // Enhanced password reset flow detection with persistent marker
+      const RESET_FLOW_KEY = 'password_reset_flow';
+      const isStoredResetFlow = localStorage.getItem(RESET_FLOW_KEY) === 'true';
+      const isRecoveryHash = window.location.hash.includes('type=recovery');
+      const hasAccessToken = window.location.hash.includes('access_token');
+      
+      const isPasswordResetFlow = isStoredResetFlow ||
+                                 window.location.pathname === '/reset-password' || 
                                  window.location.pathname === '/reset-pw' ||
                                  window.location.pathname === '/auth/callback' ||
-                                 window.location.hash.includes('type=recovery') ||
-                                 window.location.hash.includes('access_token') ||
+                                 isRecoveryHash ||
+                                 hasAccessToken ||
                                  (event === 'PASSWORD_RECOVERY' || event === 'TOKEN_REFRESHED') ||
                                  document.referrer.includes('supabase');
       
-      console.log('Is password reset flow:', isPasswordResetFlow);
+      // Set or clear persistent marker based on flow state
+      if (isRecoveryHash || hasAccessToken) {
+        localStorage.setItem(RESET_FLOW_KEY, 'true');
+      }
+      
+      console.log('Is password reset flow:', isPasswordResetFlow, 'Stored:', isStoredResetFlow);
       
       // If user just signed in and has metadata but no user record, create one
       // Skip automatic redirects during password reset flow
@@ -176,6 +187,7 @@ export const AuthProvider = ({ children }) => {
       toast.error(`Password reset failed: ${error.message}`);
       throw error;
     }
+    localStorage.setItem('password_reset_flow', 'true');
     toast.success('Password reset email sent! Check your inbox.');
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // getURL is dynamically imported, dependency not needed
@@ -185,12 +197,19 @@ export const AuthProvider = ({ children }) => {
    * Update user's password after redirect.
    */
   const updatePassword = useCallback(async newPassword => {
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
-    if (error) {
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) {
+        toast.error(`Password update failed: ${error.message}`);
+        throw error;
+      }
+      // Clear password reset flow marker on successful update
+      localStorage.removeItem('password_reset_flow');
+      toast.success('Password updated successfully!');
+    } catch (error) {
       toast.error(`Password update failed: ${error.message}`);
       throw error;
     }
-    toast.success('Password updated successfully!');
   }, []);
 
   const value = {

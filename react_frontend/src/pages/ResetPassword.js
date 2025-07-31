@@ -1,3 +1,14 @@
+/**
+ * Password Reset Page
+ * -------------------
+ * This component handles password resets. It is *never* shown unless the user:
+ *   - Arrived here via a Supabase password reset email (handled by /auth/callback)
+ *   - Has a valid recovery token/session
+ * Direct navigation here while logged in will redirect user to dashboard to prevent confusion/abuse.
+ * 
+ * DO NOT bypass /auth/callback for password resets; always ensure email links point to /auth/callback.
+ */
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -30,6 +41,10 @@ export default function ResetPassword() {
           return;
         }
 
+        // Check for persistent reset flow marker
+        const RESET_FLOW_KEY = 'password_reset_flow';
+        const isStoredResetFlow = localStorage.getItem(RESET_FLOW_KEY) === 'true';
+        
         // Enhanced recovery flow detection
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         const isRecovery = hashParams.get('type') === 'recovery';
@@ -37,31 +52,38 @@ export default function ResetPassword() {
         const hasRefreshToken = hashParams.get('refresh_token');
         const isResetPwRoute = location.pathname === '/reset-pw';
         const isResetPasswordRoute = location.pathname === '/reset-password';
-        
+
         console.log('Recovery detection:', {
           isRecovery,
           hasAccessToken: !!hasAccessToken,
           hasRefreshToken: !!hasRefreshToken,
           isResetPwRoute,
           isResetPasswordRoute,
-          hasSession: !!session?.session?.user
+          hasSession: !!session?.session?.user,
+          isStoredResetFlow
         });
 
-        // Valid password reset scenarios:
+        // Set persistent marker if we have recovery indicators
+        if (isRecovery || hasAccessToken || hasRefreshToken) {
+          localStorage.setItem(RESET_FLOW_KEY, 'true');
+        }
+
+        // Acceptable reset only if:
         // 1. URL has type=recovery parameter
-        // 2. Has access/refresh tokens in hash (coming from email link)
-        // 3. Is on /reset-pw route (alternate route)
-        // 4. Has an authenticated session and is on reset password route
-        const isValidPasswordResetSession = isRecovery || 
-                                          hasAccessToken || 
-                                          hasRefreshToken ||
-                                          isResetPwRoute ||
-                                          (session?.session?.user && isResetPasswordRoute);
+        // 2. Has access/refresh token
+        // 3. Has persistent reset flow marker
+        // 4. Has valid session and is on reset-password route with persistent marker
+        const isValidPasswordResetSession = isStoredResetFlow && (
+          isRecovery || 
+          hasAccessToken || 
+          hasRefreshToken ||
+          (session?.session?.user && isResetPasswordRoute)
+        );
 
         if (isValidPasswordResetSession) {
           console.log('Valid password reset session detected');
           setIsValidSession(true);
-        } else if (session?.session?.user) {
+        } else if (session?.session?.user && !isStoredResetFlow) {
           // User is authenticated but not in a valid reset flow
           console.log('User authenticated but not in reset flow, redirecting to dashboard');
           navigate('/dashboard');
@@ -98,7 +120,9 @@ export default function ResetPassword() {
     setSubmitting(true);
     try {
       await updatePassword(password);
-      // After successful password update, redirect to login
+      // AuthContext will clear the reset flow marker
+      // Redirect to login with clean state
+      localStorage.removeItem('password_reset_flow');
       navigate('/login', { replace: true });
     } catch (error) {
       // Error is already handled by AuthContext with toast
