@@ -67,14 +67,15 @@ export const AuthProvider = ({ children }) => {
   /**
    * PUBLIC_INTERFACE
    * Sign up user with email, password, and user metadata.
+   * Ensures the email confirmation link from Supabase redirects user to /reset-pw.
    */
   const signUp = useCallback(async ({ email, password, firstName, lastName, profession }) => {
     const { data: signUpData, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        // Force ALL confirmation links to fixed prod site (no fallback)
-        emailRedirectTo: `https://project-2025-07-30-084829-4.kavia.app/login`,
+        // Always use /reset-pw for email confirmation redirect after signup
+        emailRedirectTo: `https://project-2025-07-30-084829-4.kavia.app/reset-pw`,
         data: {
           first_name: firstName,
           last_name: lastName,
@@ -147,11 +148,11 @@ export const AuthProvider = ({ children }) => {
   /**
    * PUBLIC_INTERFACE
    * Send password reset email.
+   * Ensures password reset email redirect always points to deployed /reset-pw route.
    */
   const resetPassword = useCallback(async email => {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      // Always direct to fixed production reset-password path
-      redirectTo: `https://project-2025-07-30-084829-4.kavia.app/reset-password`
+      redirectTo: `https://project-2025-07-30-084829-4.kavia.app/reset-pw`
     });
     if (error) {
       toast.error(`Password reset failed: ${error.message}`);

@@ -19,8 +19,8 @@ export const signUp = async (email, password, metadata = {}) => {
     email,
     password,
     options: {
-      // Always use the fixed site root for confirmation link
-      emailRedirectTo: `https://project-2025-07-30-084829-4.kavia.app/login`,
+      // Always direct confirm links to /reset-pw for initial password setup (secure and user-friendly)
+      emailRedirectTo: `https://project-2025-07-30-084829-4.kavia.app/reset-pw`,
       data: metadata
     }
   })
@@ -48,8 +48,8 @@ export const signIn = async (email, password) => {
  */
 export const resetPassword = async (email) => {
   const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-    // Always use the fixed reset password route
-    redirectTo: `https://project-2025-07-30-084829-4.kavia.app/reset-password`
+    // Always direct to the new /reset-pw route for resetting password
+    redirectTo: `https://project-2025-07-30-084829-4.kavia.app/reset-pw`
   })
   return { data, error }
 }

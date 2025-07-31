@@ -49,6 +49,8 @@ export default function App() {
         />
         {/* Reset password is triggered via Supabase email link and does NOT guard */}
         <Route path="/reset-password" element={<ResetPassword />} />
+        {/* NEW: Route to support /reset-pw for email links */}
+        <Route path="/reset-pw" element={<ResetPassword />} />
 
         {/* Test page for signup flow testing */}
         <Route path="/test" element={<TestPage />} />
