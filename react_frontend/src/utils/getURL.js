@@ -11,7 +11,7 @@
 export const getURL = () => {
   let url = process.env.REACT_APP_SITE_URL ||
     process.env.REACT_APP_VERCEL_URL ||
-    'https://project-2025-07-30-084829-1.kavia.app' ||
+    'https://project-2025-07-30-084829-3.kavia.app' ||
     'http://localhost:3000'
 
   // Ensure URL starts with http/https
