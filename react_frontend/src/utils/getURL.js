@@ -9,22 +9,24 @@
  * @returns {string} The formatted site URL with trailing slash
  */
 export const getURL = () => {
+  // Prefer explicit env var, else fall back to window.location for true current host
   let url = process.env.REACT_APP_SITE_URL ||
     process.env.REACT_APP_VERCEL_URL ||
-    'https://project-2025-07-30-084829-3.kavia.app' ||
-    'http://localhost:3000'
+    (typeof window !== "undefined"
+      ? window.location.origin
+      : 'http://localhost:3000');
 
   // Ensure URL starts with http/https
   if (!url.startsWith('http')) {
-    url = `https://${url}`
+    url = `https://${url}`;
   }
 
   // Ensure URL ends with /
   if (!url.endsWith('/')) {
-    url = `${url}/`
+    url = `${url}/`;
   }
 
-  return url
-}
+  return url;
+};
 
 export default getURL

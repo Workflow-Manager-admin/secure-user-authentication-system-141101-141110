@@ -15,12 +15,13 @@ import { toast } from 'react-hot-toast'
  * @returns {Promise<{data: Object|null, error: Error|null}>}
  */
 export const signUp = async (email, password, metadata = {}) => {
+  const siteUrl = getURL().replace(/\/$/, '');
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      // Always direct confirm links to /reset-pw for initial password setup (secure and user-friendly)
-      emailRedirectTo: `https://project-2025-07-30-084829-4.kavia.app/reset-pw`,
+      // Dynamic confirmation link for environment (never hardcoded!):
+      emailRedirectTo: `${siteUrl}/reset-pw`,
       data: metadata
     }
   })
@@ -47,9 +48,9 @@ export const signIn = async (email, password) => {
  * @returns {Promise<{data: Object|null, error: Error|null}>}
  */
 export const resetPassword = async (email) => {
+  const siteUrl = getURL().replace(/\/$/, '');
   const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-    // Always direct to the new /reset-pw route for resetting password
-    redirectTo: `https://project-2025-07-30-084829-4.kavia.app/reset-pw`
+    redirectTo: `${siteUrl}/reset-pw`
   })
   return { data, error }
 }
@@ -60,11 +61,11 @@ export const resetPassword = async (email) => {
  * @returns {Promise<{data: Object|null, error: Error|null}>}
  */
 export const signInWithMagicLink = async (email) => {
+  const siteUrl = getURL().replace(/\/$/, '');
   const { data, error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      // Always direct magic link auth to required login page
-      emailRedirectTo: `https://project-2025-07-30-084829-4.kavia.app/login`
+      emailRedirectTo: `${siteUrl}/login`
     }
   })
   return { data, error }
@@ -76,11 +77,11 @@ export const signInWithMagicLink = async (email) => {
  * @returns {Promise<{data: Object|null, error: Error|null}>}
  */
 export const signInWithOAuth = async (provider) => {
+  const siteUrl = getURL().replace(/\/$/, '');
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
     options: {
-      // Always direct OAuth redirect to the fixed login URI
-      redirectTo: `https://project-2025-07-30-084829-4.kavia.app/login`
+      redirectTo: `${siteUrl}/login`
     }
   })
   return { data, error }
