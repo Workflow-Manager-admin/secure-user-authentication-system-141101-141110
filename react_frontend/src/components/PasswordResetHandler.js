@@ -18,6 +18,10 @@ export default function PasswordResetHandler() {
       console.log('Current URL:', window.location.href);
       
       try {
+        // Set password reset flow marker immediately
+        const RESET_FLOW_KEY = 'password_reset_flow';
+        localStorage.setItem(RESET_FLOW_KEY, 'true');
+        
         // Check if we have auth tokens in the URL hash
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         const accessToken = hashParams.get('access_token');
@@ -41,6 +45,7 @@ export default function PasswordResetHandler() {
           
           if (error) {
             console.error('Error setting session:', error);
+            localStorage.removeItem(RESET_FLOW_KEY); // Clear marker on error
             navigate('/forgot-password?error=invalid_link');
             return;
           }
@@ -49,7 +54,11 @@ export default function PasswordResetHandler() {
           
           // Clear the hash to clean up the URL and redirect to reset password page
           window.history.replaceState(null, '', window.location.pathname);
-          navigate('/reset-password', { replace: true });
+          
+          // Small delay to ensure auth state change is processed
+          setTimeout(() => {
+            navigate('/reset-password', { replace: true });
+          }, 100);
           
         } else if (type === 'recovery') {
           // Recovery type but no access token - redirect to reset password anyway
@@ -57,7 +66,10 @@ export default function PasswordResetHandler() {
           navigate('/reset-password', { replace: true });
           
         } else {
-          // Not a password reset link, check if user is already authenticated
+          // Not a password reset link, clear the marker and handle normally
+          localStorage.removeItem(RESET_FLOW_KEY);
+          
+          // Check if user is already authenticated
           const { data: session } = await supabase.auth.getSession();
           
           if (session?.session?.user) {
@@ -71,6 +83,7 @@ export default function PasswordResetHandler() {
         
       } catch (error) {
         console.error('Error handling password reset redirect:', error);
+        localStorage.removeItem('password_reset_flow'); // Clear marker on error
         navigate('/forgot-password?error=processing_failed');
       }
     };

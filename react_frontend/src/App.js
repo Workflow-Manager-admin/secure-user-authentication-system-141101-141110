@@ -19,7 +19,7 @@ import PasswordResetHandler from './components/PasswordResetHandler';
  * redirect logic based on Supabase authentication status.
  */
 export default function App() {
-  const { user, loading } = useAuth();
+  const { user, loading, isInPasswordResetFlow } = useAuth();
 
   // While AuthContext initialises, keep UI minimal
   if (loading) {
@@ -29,24 +29,28 @@ export default function App() {
   return (
     <Router>
       <Routes>
-        {/* home → redirect to dashboard (if logged in) or login */}
+        {/* home → redirect to dashboard (if logged in) or login, but respect password reset flows */}
         <Route
           path="/"
-          element={<Navigate to={user ? '/dashboard' : '/login'} replace />}
+          element={
+            user && !isInPasswordResetFlow() ? 
+              <Navigate to="/dashboard" replace /> : 
+              <Navigate to="/login" replace />
+          }
         />
 
         {/* Auth pages – block when already authenticated (except during password reset) */}
         <Route
           path="/login"
-          element={user && !window.location.hash.includes('type=recovery') ? <Navigate to="/dashboard" replace /> : <SignIn />}
+          element={user && !isInPasswordResetFlow() ? <Navigate to="/dashboard" replace /> : <SignIn />}
         />
         <Route
           path="/signup"
-          element={user && !window.location.hash.includes('type=recovery') ? <Navigate to="/dashboard" replace /> : <SignUp />}
+          element={user && !isInPasswordResetFlow() ? <Navigate to="/dashboard" replace /> : <SignUp />}
         />
         <Route
           path="/forgot-password"
-          element={user && !window.location.hash.includes('type=recovery') ? <Navigate to="/dashboard" replace /> : <ForgotPassword />}
+          element={user && !isInPasswordResetFlow() ? <Navigate to="/dashboard" replace /> : <ForgotPassword />}
         />
         
         {/* Auth callback handler for email links */}

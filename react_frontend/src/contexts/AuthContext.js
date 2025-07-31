@@ -35,22 +35,32 @@ export const AuthProvider = ({ children }) => {
       const isStoredResetFlow = localStorage.getItem(RESET_FLOW_KEY) === 'true';
       const isRecoveryHash = window.location.hash.includes('type=recovery');
       const hasAccessToken = window.location.hash.includes('access_token');
+      const hasRefreshToken = window.location.hash.includes('refresh_token');
+      const isCallbackPath = window.location.pathname === '/auth/callback';
+      const isResetPath = window.location.pathname === '/reset-password' || window.location.pathname === '/reset-pw';
       
       const isPasswordResetFlow = isStoredResetFlow ||
-                                 window.location.pathname === '/reset-password' || 
-                                 window.location.pathname === '/reset-pw' ||
-                                 window.location.pathname === '/auth/callback' ||
+                                 isResetPath ||
+                                 isCallbackPath ||
                                  isRecoveryHash ||
                                  hasAccessToken ||
+                                 hasRefreshToken ||
                                  (event === 'PASSWORD_RECOVERY' || event === 'TOKEN_REFRESHED') ||
                                  document.referrer.includes('supabase');
       
-      // Set or clear persistent marker based on flow state
-      if (isRecoveryHash || hasAccessToken) {
+      // Set persistent marker for password reset flows
+      if (isRecoveryHash || hasAccessToken || hasRefreshToken || event === 'PASSWORD_RECOVERY') {
         localStorage.setItem(RESET_FLOW_KEY, 'true');
+        console.log('Password reset flow marker set');
       }
       
-      console.log('Is password reset flow:', isPasswordResetFlow, 'Stored:', isStoredResetFlow);
+      // Clear marker when user completes normal sign in (not during password reset)
+      if (event === 'SIGNED_IN' && !isPasswordResetFlow) {
+        localStorage.removeItem(RESET_FLOW_KEY);
+        console.log('Password reset flow marker cleared for normal sign in');
+      }
+      
+      console.log('Is password reset flow:', isPasswordResetFlow, 'Stored:', isStoredResetFlow, 'Event:', event);
       
       // If user just signed in and has metadata but no user record, create one
       // Skip automatic redirects during password reset flow
@@ -212,6 +222,22 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
+  /**
+   * PUBLIC_INTERFACE
+   * Check if user is currently in a password reset flow
+   */
+  const isInPasswordResetFlow = useCallback(() => {
+    const RESET_FLOW_KEY = 'password_reset_flow';
+    const isStoredResetFlow = localStorage.getItem(RESET_FLOW_KEY) === 'true';
+    const isRecoveryHash = window.location.hash.includes('type=recovery');
+    const hasAccessToken = window.location.hash.includes('access_token');
+    const hasRefreshToken = window.location.hash.includes('refresh_token');
+    const isCallbackPath = window.location.pathname === '/auth/callback';
+    const isResetPath = window.location.pathname === '/reset-password' || window.location.pathname === '/reset-pw';
+    
+    return isStoredResetFlow || isRecoveryHash || hasAccessToken || hasRefreshToken || isCallbackPath || isResetPath;
+  }, []);
+
   const value = {
     session,
     user: session?.user ?? null,
@@ -220,7 +246,8 @@ export const AuthProvider = ({ children }) => {
     signIn,
     signOut,
     resetPassword,
-    updatePassword
+    updatePassword,
+    isInPasswordResetFlow
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

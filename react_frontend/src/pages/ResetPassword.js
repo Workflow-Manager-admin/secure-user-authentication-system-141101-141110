@@ -68,26 +68,44 @@ export default function ResetPassword() {
           localStorage.setItem(RESET_FLOW_KEY, 'true');
         }
 
-        // Acceptable reset only if:
-        // 1. URL has type=recovery parameter
-        // 2. Has access/refresh token
-        // 3. Has persistent reset flow marker
-        // 4. Has valid session and is on reset-password route with persistent marker
-        const isValidPasswordResetSession = isStoredResetFlow && (
+        // More flexible validation for password reset sessions
+        // Accept if any of these conditions are met:
+        // 1. Has stored reset flow marker (most reliable)
+        // 2. URL has recovery parameters (direct from email)
+        // 3. Has valid session AND is on reset route (user navigated correctly)
+        const isValidPasswordResetSession = 
+          isStoredResetFlow || 
           isRecovery || 
           hasAccessToken || 
           hasRefreshToken ||
-          (session?.session?.user && isResetPasswordRoute)
-        );
+          (session?.session?.user && (isResetPasswordRoute || isResetPwRoute));
 
         if (isValidPasswordResetSession) {
           console.log('Valid password reset session detected');
+          // Ensure marker is set for consistent state
+          if (!isStoredResetFlow && (isRecovery || hasAccessToken || hasRefreshToken)) {
+            localStorage.setItem(RESET_FLOW_KEY, 'true');
+          }
           setIsValidSession(true);
-        } else if (session?.session?.user && !isStoredResetFlow) {
+        } else if (session?.session?.user) {
           // User is authenticated but not in a valid reset flow
-          console.log('User authenticated but not in reset flow, redirecting to dashboard');
-          navigate('/dashboard');
-          return;
+          // Give them a chance - maybe they navigated directly
+          console.log('User authenticated but no clear reset flow - checking if they came from reset email');
+          
+          // Check if they might have come from a reset email (document referrer check)
+          const possibleResetFlow = document.referrer.includes('supabase') || 
+                                   document.referrer.includes('mail') ||
+                                   sessionStorage.getItem('password_reset_attempt') === 'true';
+          
+          if (possibleResetFlow) {
+            console.log('Detected possible reset flow, allowing access');
+            localStorage.setItem(RESET_FLOW_KEY, 'true');
+            setIsValidSession(true);
+          } else {
+            console.log('User authenticated but not in reset flow, redirecting to dashboard');
+            navigate('/dashboard');
+            return;
+          }
         } else {
           // No valid session for password reset
           console.log('No valid session, redirecting to forgot password');
