@@ -29,8 +29,14 @@ export const AuthProvider = ({ children }) => {
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       setSession(newSession);
       
+      // Check if this is a password reset flow by examining the URL
+      const isPasswordResetFlow = window.location.pathname === '/reset-password' || 
+                                 window.location.pathname === '/reset-pw' ||
+                                 window.location.hash.includes('type=recovery');
+      
       // If user just signed in and has metadata but no user record, create one
-      if (event === 'SIGNED_IN' && newSession?.user) {
+      // Skip automatic redirects during password reset flow
+      if (event === 'SIGNED_IN' && newSession?.user && !isPasswordResetFlow) {
         const user = newSession.user;
         
         // Check if user record exists in users table
@@ -151,14 +157,14 @@ export const AuthProvider = ({ children }) => {
   /**
    * PUBLIC_INTERFACE
    * Send password reset email.
-   * Ensures password reset email redirect always points to deployed /reset-pw route.
+   * Ensures password reset email redirect always points to the reset password page.
    */
   const resetPassword = useCallback(async email => {
     const { getURL } = require('../utils/getURL');
     const siteUrl = getURL().replace(/\/$/, '');
-    // Reset password emails should redirect to /reset-pw on this deploy
+    // Reset password emails should redirect to /reset-password to ensure proper routing
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${siteUrl}/reset-pw`
+      redirectTo: `${siteUrl}/reset-password`
     });
     if (error) {
       toast.error(`Password reset failed: ${error.message}`);

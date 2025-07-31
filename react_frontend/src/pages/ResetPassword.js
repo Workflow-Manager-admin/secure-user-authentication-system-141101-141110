@@ -1,18 +1,73 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../supabaseClient';
+import LoadingScreen from '../components/LoadingScreen';
 
 export default function ResetPassword() {
   const { updatePassword } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [isValidSession, setIsValidSession] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkPasswordResetSession = async () => {
+      try {
+        // Check if there's a password recovery session
+        const { data: session, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+          navigate('/forgot-password');
+          return;
+        }
+
+        // Check if this is a valid password reset session
+        if (session?.session?.user) {
+          // Check URL hash for recovery type
+          const hashParams = new URLSearchParams(window.location.hash.substring(1));
+          const isRecovery = hashParams.get('type') === 'recovery';
+          
+          if (isRecovery || location.pathname === '/reset-pw') {
+            setIsValidSession(true);
+          } else {
+            // If user is already authenticated but not in recovery mode, redirect to dashboard
+            navigate('/dashboard');
+            return;
+          }
+        } else {
+          // No valid session for password reset
+          navigate('/forgot-password');
+          return;
+        }
+      } catch (error) {
+        console.error('Error checking password reset session:', error);
+        navigate('/forgot-password');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkPasswordResetSession();
+  }, [navigate, location]);
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
+
+  if (!isValidSession) {
+    return <LoadingScreen />;
+  }
 
   const handleSubmit = async e => {
     e.preventDefault();
     setSubmitting(true);
     try {
       await updatePassword(password);
+      // After successful password update, redirect to login
       navigate('/login', { replace: true });
     } catch (error) {
       // Error is already handled by AuthContext with toast
