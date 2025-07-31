@@ -64,6 +64,14 @@ export const AuthProvider = ({ children }) => {
         console.log('Password reset flow marker cleared for normal sign in');
       }
       
+      // Clear markers on sign out to ensure clean state
+      if (event === 'SIGNED_OUT') {
+        localStorage.removeItem(RESET_FLOW_KEY);
+        sessionStorage.removeItem('password_reset_attempt');
+        localStorage.removeItem('password_reset_timestamp');
+        console.log('Password reset flow markers cleared on sign out');
+      }
+      
       console.log('Is password reset flow:', isPasswordResetFlow, 'Stored:', isStoredResetFlow, 'Event:', event);
       
       // If user just signed in and has metadata but no user record, create one
@@ -175,14 +183,34 @@ export const AuthProvider = ({ children }) => {
   /**
    * PUBLIC_INTERFACE
    * Sign out currently logged in user.
+   * Clears session state immediately to prevent navigation delays.
    */
   const signOut = useCallback(async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast.error(`Sign out failed: ${error.message}`);
+    try {
+      // Clear session state immediately to prevent race conditions with navigation
+      setSession(null);
+      
+      // Clear any password reset flow markers since user is signing out
+      localStorage.removeItem('password_reset_flow');
+      sessionStorage.removeItem('password_reset_attempt');
+      localStorage.removeItem('password_reset_timestamp');
+      
+      // Call Supabase signOut
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        // If signOut fails, we need to restore the session
+        // The auth state change listener will handle this automatically
+        console.error('Sign out error:', error);
+        toast.error(`Sign out failed: ${error.message}`);
+        throw error;
+      }
+      
+      toast.success('Successfully logged out!');
+    } catch (error) {
+      // Re-throw error for component error handling
       throw error;
     }
-    toast.success('Successfully logged out!');
   }, []);
 
   /**
